@@ -87,28 +87,23 @@
 
   </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/auth.js"></script>
-  <script>
-    // Apenas aplica máscara e força de senha — SEM validações em tempo real
-    aplicarMascaraTelefone(document.getElementById('telefone'));
+  <script src="js/api.js">
+</script>
+  <script src="js/auth.js">
+</script>
+  <script>    aplicarMascaraTelefone(document.getElementById('telefone'));
     atualizarForcaSenha('senha', 'forca-barra', 'forca-texto');
-
     document.getElementById('form-cadastro').addEventListener('submit', async function(e) {
       e.preventDefault();
-
       const nome = document.getElementById('nome').value.trim();
       const telefone = document.getElementById('telefone').value.trim();
       const email = document.getElementById('email').value.trim();
       const senha = document.getElementById('senha').value;
       const confirmar = document.getElementById('confirmar-senha').value;
       const termos = document.getElementById('termos').checked;
-
       let valido = true;
-
       ['nome','telefone','email','senha','confirmar-senha'].forEach(limparErro);
       limparAlerta('alerta-cadastro');
-
       if (!nome) { marcarErro('nome', 'Campo obrigatório'); valido = false; }
       if (!telefone || telefone.replace(/\D/g,'').length < 10) { marcarErro('telefone', 'Telefone inválido'); valido = false; }
       if (!email) { marcarErro('email', 'Campo obrigatório'); valido = false; }
@@ -118,12 +113,9 @@
       else if (senha !== confirmar) { marcarErro('confirmar-senha', 'As senhas não coincidem'); valido = false; }
       if (!termos) { document.getElementById('termos-erro').textContent = 'Aceite os termos para continuar'; valido = false; }
       else { document.getElementById('termos-erro').textContent = ''; }
-
       if (!valido) return;
-
       const btn = document.getElementById('btn-cadastrar');
       mostrarBtnLoading(btn);
-
       try {
         const existentes = await apiGet(`usuarios?email=${encodeURIComponent(email)}`);
         if (existentes.length > 0) {
@@ -131,7 +123,6 @@
           esconderBtnLoading(btn);
           return;
         }
-
         const novoUsuario = {
           nome,
           email,
@@ -143,17 +134,15 @@
           barbasFeitas: 0,
           foto: null
         };
-
         const criado = await apiPost('usuarios', novoUsuario);
         salvarSessao(criado);
         window.location.href = 'dashboard.html';
-
       } catch (err) {
         mostrarAlerta('alerta-cadastro', 'Erro ao cadastrar. Tente novamente.', 'error');
         esconderBtnLoading(btn);
       }
     });
-  </script>
+</script>
 
 </body>
 </html>

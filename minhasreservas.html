@@ -43,7 +43,7 @@
     </main>
   </div>
 
-  <!-- Modal Cancelar -->
+  
   <div class="modal-overlay hidden" id="modal-cancelar">
     <div class="modal-caixa">
       <h3 class="modal-titulo">Cancelar Reserva</h3>
@@ -55,7 +55,7 @@
     </div>
   </div>
 
-  <!-- Modal Editar -->
+  
   <div class="modal-overlay hidden" id="modal-editar">
     <div class="modal-caixa" style="max-width:480px;">
       <h3 class="modal-titulo">Editar Reserva</h3>
@@ -83,33 +83,29 @@
     </div>
   </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/sidebar.js"></script>
-  <script>
-    const usuario = protegerRota();
+  <script src="js/api.js">
+</script>
+  <script src="js/auth.js">
+</script>
+  <script src="js/sidebar.js">
+</script>
+  <script>    const usuario = protegerRota();
     renderizarSidebar('reservas');
-
     let reservaParaCancelar = null;
     let reservaParaEditar = null;
     let novoHorarioSelecionado = null;
-
     function formatarData(dataISO) {
       const partes = dataISO.split('-');
       return partes[2] + '/' + partes[1] + '/' + partes[0];
     }
-
-    // ---- Modal Cancelar ----
     function fecharModalCancelar() {
       document.getElementById('modal-cancelar').classList.add('hidden');
       reservaParaCancelar = null;
     }
-
     function abrirModalCancelar(reserva) {
       reservaParaCancelar = reserva;
       document.getElementById('modal-cancelar').classList.remove('hidden');
     }
-
     document.getElementById('btn-confirmar-cancelar').addEventListener('click', async function() {
       if (!reservaParaCancelar) return;
       const btn = this;
@@ -123,34 +119,25 @@
         alert('Erro ao cancelar reserva. Tente novamente.');
       }
     });
-
-    // ---- Modal Editar ----
     function fecharModalEditar() {
       document.getElementById('modal-editar').classList.add('hidden');
       reservaParaEditar = null;
       novoHorarioSelecionado = null;
     }
-
     function abrirModalEditar(reserva) {
       reservaParaEditar = reserva;
       novoHorarioSelecionado = null;
       document.getElementById('edit-horarios-grid').innerHTML = '<span style="color:var(--cor-texto-suave); font-size:0.85rem;">Selecione uma data primeiro</span>';
       document.getElementById('edit-horario-erro').textContent = '';
       document.getElementById('edit-alerta').classList.add('hidden');
-
       const hoje = new Date().toISOString().split('T')[0];
       const editData = document.getElementById('edit-data');
       editData.min = hoje;
       editData.value = reserva.data >= hoje ? reserva.data : hoje;
-
       document.getElementById('modal-editar').classList.remove('hidden');
-
-      // Carregar horários para a data atual da reserva
       carregarHorariosEdicao();
     }
-
     document.getElementById('edit-data').addEventListener('change', carregarHorariosEdicao);
-
     function gerarSlotsBase() {
       const slots = [];
       for (let h = 7; h <= 18; h++) {
@@ -158,42 +145,32 @@
       }
       return slots;
     }
-
     async function carregarHorariosEdicao() {
       if (!reservaParaEditar) return;
       const data = document.getElementById('edit-data').value;
       if (!data) return;
-
       const dataObj = new Date(data + 'T12:00:00');
       const diaSemana = dataObj.getDay();
-
       const grid = document.getElementById('edit-horarios-grid');
-
       if (diaSemana === 0) {
         grid.innerHTML = '<span style="color:var(--cor-texto-suave); font-size:0.85rem;">Não trabalhamos aos domingos.</span>';
         return;
       }
-
       grid.innerHTML = '<span class="loading-spinner dark" style="margin:8px;"></span>';
       novoHorarioSelecionado = null;
-
       try {
         const reservas = await apiGet('reservas?barbeiro_id=' + reservaParaEditar.barbeiro_id + '&data=' + data);
-        // Excluir a própria reserva sendo editada dos ocupados
         const horariosOcupados = new Set(
           reservas.filter(function(r){ return r.status !== 'cancelado' && r.id !== reservaParaEditar.id; }).map(function(r){ return r.hora; })
         );
-
         const slots = gerarSlotsBase();
         const agora = new Date();
         const isHoje = data === agora.toISOString().split('T')[0];
-
         grid.innerHTML = '';
         slots.forEach(function(hora) {
           const [hh] = hora.split(':').map(Number);
           let disponivel = !horariosOcupados.has(hora);
           if (isHoje && hh <= agora.getHours()) disponivel = false;
-
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'pill-opcao ' + (disponivel ? 'disponivel' : 'indisponivel');
@@ -213,30 +190,24 @@
         grid.innerHTML = '<span style="color:var(--cor-erro); font-size:0.85rem;">Erro ao carregar horários.</span>';
       }
     }
-
     document.getElementById('btn-confirmar-editar').addEventListener('click', async function() {
       document.getElementById('edit-horario-erro').textContent = '';
       const novaData = document.getElementById('edit-data').value;
-
       if (!novoHorarioSelecionado) {
         document.getElementById('edit-horario-erro').textContent = 'Selecione um horário';
         return;
       }
-
       const btn = this;
       mostrarBtnLoading(btn);
-
       try {
         const diasNomes = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
         const dataObj = new Date(novaData + 'T12:00:00');
         const diaSemana = diasNomes[dataObj.getDay()];
-
         await apiPatch('reservas/' + reservaParaEditar.id, {
           data: novaData,
           diaSemana: diaSemana,
           hora: novoHorarioSelecionado
         });
-
         fecharModalEditar();
         carregarReservas();
       } catch(err) {
@@ -245,29 +216,23 @@
         esconderBtnLoading(btn);
       }
     });
-
-    // ---- Renderizar card ----
     function renderizarCard(reserva) {
       const hoje = new Date().toISOString().split('T')[0];
       const passada = reserva.data < hoje;
       const cancelada = reserva.status === 'cancelado';
       const inicial = reserva.barbeiro_nome.charAt(0).toUpperCase();
-
       const badgeHtml = cancelada
         ? '<span class="badge badge-cancelado">Cancelado</span>'
         : passada
           ? '<span class="badge" style="background:#f5f5f5;color:#888;">Concluído</span>'
           : '<span class="badge badge-confirmado">Confirmado</span>';
-
       const tipoCorteNomes = { Maquina: 'Máquina', Tesoura: 'Tesoura', TesouraMaquina: 'Tesoura + Máquina' };
       const tipoLabel = reserva.tipoCorte ? ' (' + (tipoCorteNomes[reserva.tipoCorte] || reserva.tipoCorte) + ')' : '';
       const precoLabel = reserva.preco ? ' — R$ ' + Number(reserva.preco).toFixed(2).replace('.', ',') : '';
-
       const acoes = (!passada && !cancelada)
         ? '<button class="btn-editar" onclick=\'abrirModalEditar(' + JSON.stringify(reserva) + ')\'>✏️ Editar</button>' +
           '<button class="btn-danger" onclick=\'abrirModalCancelar(' + JSON.stringify(reserva) + ')\'>Cancelar</button>'
         : '';
-
       return '<div class="reserva-card">' +
         '<div class="reserva-card-header">' +
           '<span class="reserva-data">' + formatarData(reserva.data) + '</span>' +
@@ -284,14 +249,11 @@
         '</div>' +
       '</div>';
     }
-
     async function carregarReservas() {
       const container = document.getElementById('reservas-conteudo');
       container.innerHTML = '<div class="loading-container"><span class="loading-spinner dark"></span> Carregando reservas...</div>';
-
       try {
         const reservas = await apiGet('reservas?usuario_id=' + usuario.id);
-
         if (reservas.length === 0) {
           container.innerHTML =
             '<div class="estado-vazio">' +
@@ -306,34 +268,27 @@
             '</div>';
           return;
         }
-
         const hoje = new Date().toISOString().split('T')[0];
         const futuras = reservas.filter(function(r) { return r.data >= hoje && r.status !== 'cancelado'; });
         const passadas = reservas.filter(function(r) { return r.data < hoje || r.status === 'cancelado'; });
-
         let html = '';
-
         if (futuras.length > 0) {
           html += '<div class="reservas-secao-titulo">Próximas Reservas</div><div class="reservas-lista">';
           futuras.sort(function(a, b) { return a.data.localeCompare(b.data); }).forEach(function(r) { html += renderizarCard(r); });
           html += '</div>';
         }
-
         if (passadas.length > 0) {
           html += '<div class="reservas-secao-titulo" style="margin-top:24px;">Reservas Anteriores</div><div class="reservas-lista">';
           passadas.sort(function(a, b) { return b.data.localeCompare(a.data); }).forEach(function(r) { html += renderizarCard(r); });
           html += '</div>';
         }
-
         container.innerHTML = html;
-
       } catch (err) {
         container.innerHTML = '<div class="alert alert-error">Erro ao carregar reservas. Tente novamente.</div>';
       }
     }
-
     carregarReservas();
-  </script>
+</script>
 
 </body>
 </html>

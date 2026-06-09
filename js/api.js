@@ -1,9 +1,3 @@
-// ============================================================
-//  api.js — versão localStorage (compatível com GitHub Pages)
-//  Simula GET / POST / PATCH / DELETE sem servidor externo
-// ============================================================
-
-// ---------- Dados iniciais (seed) ----------
 const DB_SEED = {
   usuarios: [
     {
@@ -29,7 +23,6 @@ const DB_SEED = {
   codigos_verificacao: []
 };
 
-// ---------- Inicializar banco ----------
 function dbInit() {
   if (!localStorage.getItem('bs_initialized')) {
     Object.keys(DB_SEED).forEach(function(col) {
@@ -39,7 +32,6 @@ function dbInit() {
   }
 }
 
-// ---------- Helpers ----------
 function dbRead(col) {
   const raw = localStorage.getItem('bs_' + col);
   return raw ? JSON.parse(raw) : [];
@@ -54,7 +46,6 @@ function nextId(col) {
   return rows.length === 0 ? 1 : Math.max.apply(null, rows.map(function(r){ return r.id || 0; })) + 1;
 }
 
-// Parseia query string simples: "campo=valor&campo2=valor2"
 function parseQuery(qs) {
   const params = {};
   if (!qs) return params;
@@ -67,9 +58,6 @@ function parseQuery(qs) {
   return params;
 }
 
-// ---------- API simulada ----------
-
-// Simula delay de rede (~120ms) para manter loading visível
 function delay(ms) {
   return new Promise(function(resolve){ setTimeout(resolve, ms || 120); });
 }
@@ -78,7 +66,6 @@ async function apiGet(endpoint) {
   dbInit();
   await delay();
 
-  // endpoint ex: "usuarios", "usuarios/1", "reservas?usuario_id=2"
   const [pathPart, qsPart] = endpoint.split('?');
   const segments = pathPart.split('/');
   const col = segments[0];
@@ -94,7 +81,6 @@ async function apiGet(endpoint) {
 
   let result = rows;
 
-  // Filtrar por query params
   if (qsPart) {
     const params = parseQuery(qsPart);
     Object.keys(params).forEach(function(key) {
