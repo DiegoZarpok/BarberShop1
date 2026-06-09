@@ -11,14 +11,14 @@
 
 ---
 
-## 🔗 Links
+##  Links
 
 - **Deploy:** [https://diegozarpok.github.io/BarberShop1/](https://diegozarpok.github.io/BarberShop1/)
 - **Repositório:** [https://github.com/DiegoZarpok/barbershop](https://github.com/DiegoZarpok/barbershop)
 
 ---
 
-## 📋 Sobre o Projeto
+##  Sobre o Projeto
 
 Sistema web completo de agendamento para barbearia com:
 
@@ -33,7 +33,7 @@ Sistema web completo de agendamento para barbearia com:
 
 ---
 
-## 💈 Serviços e Preços
+##  Serviços e Preços
 
 | Serviço | Tipo | Preço |
 |---|---|---|
@@ -45,7 +45,7 @@ Sistema web completo de agendamento para barbearia com:
 
 ---
 
-## 🛠 Tecnologias Utilizadas
+##  Tecnologias Utilizadas
 
 - **HTML5** — estrutura semântica das páginas
 - **CSS3** — variáveis CSS, Flexbox, Grid Layout
@@ -55,7 +55,7 @@ Sistema web completo de agendamento para barbearia com:
 
 ---
 
-## 🚀 Como Rodar Localmente
+##  Como Rodar Localmente
 
 Não precisa instalar nada. Basta:
 
@@ -79,7 +79,7 @@ Depois clique com o botão direito no `index.html` → **"Open with Live Server"
 
 ---
 
-## 🔑 Credenciais para Teste
+##  Credenciais para Teste
 
 | Campo | Valor |
 |---|---|
@@ -114,7 +114,7 @@ barbershop/
 
 ---
 
-## 🔌 Camada de API (localStorage)
+##  Camada de API (localStorage)
 
 O arquivo `js/api.js` simula uma API REST completa usando o `localStorage` do navegador. As funções mantêm a mesma interface de uma API real:
 
@@ -129,13 +129,13 @@ O arquivo `js/api.js` simula uma API REST completa usando o `localStorage` do na
 
 ---
 
-## 👥 Integrantes do Grupo
+##  Integrantes do Grupo
 
 - Diego Barbosa, Pedro Costa, Alexandre Muniz.
 
 ---
 
-## 📄 Descrição do Projeto
+##  Descrição do Projeto
 
 Sistema web de agendamento de barbearia com autenticação completa de usuário (cadastro, login e recuperação de senha via código OTP de 6 dígitos), painel de controle com resumo das próximas reservas e total de visitas, perfil do cliente com foto e status do plano, formulário de agendamento com seleção de barbeiro, serviço, tipo de corte e horário disponível, verificação automática de conflitos de horário por barbeiro, gerenciamento de reservas com opção de edição (troca de data/horário) e cancelamento, além de feedback visual completo com estados de loading, erro e sucesso em todas as interações.
 
