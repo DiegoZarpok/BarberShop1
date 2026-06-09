@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BarberShop — Login</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-body">
+
+  <div class="auth-container">
+
+    <div class="auth-logo-texto">✂ BarberShop</div>
+
+    <h1 class="auth-titulo">Reserve seu horário!</h1>
+
+    <div id="alerta-login" class="auth-alert hidden"></div>
+
+    <form class="auth-form" id="form-login" novalidate>
+
+      <div class="input-group">
+        <label for="email">EMAIL:</label>
+        <div class="input-wrapper">
+          <input
+            type="email"
+            id="email"
+            class="input-field"
+            placeholder="Email"
+            autocomplete="email"
+          >
+        </div>
+        <span class="mensagem-erro-campo" id="email-erro"></span>
+      </div>
+
+      <div class="input-group">
+        <label for="senha">SENHA:</label>
+        <div class="input-wrapper">
+          <input
+            type="password"
+            id="senha"
+            class="input-field"
+            placeholder="Senha..."
+            autocomplete="current-password"
+          >
+          <button type="button" class="toggle-senha" id="btn-toggle-senha" onclick="toggleSenha('senha','btn-toggle-senha')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <span class="mensagem-erro-campo" id="senha-erro"></span>
+      </div>
+
+      <div class="auth-acoes">
+        <p class="auth-link-central">
+          <a href="verificacao.html">Esqueceu a senha?</a>
+        </p>
+        <button type="submit" class="btn-primary" id="btn-entrar">ENTRAR</button>
+      </div>
+
+    </form>
+
+    <p class="auth-rodape">
+      Ainda não está registrado? <a href="cadastro.html">Cadastre-se</a>
+    </p>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (function verificarSeJaLogado() {
+      if (obterSessao()) window.location.href = 'dashboard.html';
+    })();
+
+    document.getElementById('form-login').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value;
+      let valido = true;
+
+      limparErro('email');
+      limparErro('senha');
+      limparAlerta('alerta-login');
+
+      if (!email) { marcarErro('email', 'Campo obrigatório'); valido = false; }
+      else if (!validarEmail(email)) { marcarErro('email', 'Digite um email válido'); valido = false; }
+
+      if (!senha) { marcarErro('senha', 'Campo obrigatório'); valido = false; }
+
+      if (!valido) return;
+
+      const btn = document.getElementById('btn-entrar');
+      mostrarBtnLoading(btn);
+
+      try {
+        const usuarios = await apiGet(`usuarios?email=${encodeURIComponent(email)}`);
+        const usuario = usuarios.find(u => u.email === email && u.senha === senha);
+
+        if (!usuario) {
+          mostrarAlerta('alerta-login', 'Email ou senha incorretos.', 'error');
+          esconderBtnLoading(btn);
+          return;
+        }
+
+        salvarSessao(usuario);
+        window.location.href = 'dashboard.html';
+
+      } catch (err) {
+        mostrarAlerta('alerta-login', 'Erro ao realizar login. Tente novamente.', 'error');
+        esconderBtnLoading(btn);
+      }
+    });
+  </script>
+
+</body>
+</html>

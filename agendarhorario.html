@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BarberShop — Agendar Horário</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/app.css">
+  <style>
+    .tipo-corte-opcoes { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+    .tipo-corte-opcao { display:flex; align-items:center; gap:6px; cursor:pointer; }
+    .preco-info { font-size:0.85rem; color:var(--cor-texto-suave); margin-top:6px; }
+    .preco-destaque { font-weight:600; color:var(--cor-texto); font-size:1rem; }
+    .desconto-tag { background:#e8f5e9; color:#2e7d32; font-size:0.78rem; padding:2px 8px; border-radius:20px; margin-left:6px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-titulo">Agendar Horário</h1>
+      </div>
+      <div class="page-body">
+
+        <p class="texto-destaque" style="font-weight:500; margin-bottom:20px;">
+          Preencha todos os campos e agende um horário
+        </p>
+
+        <div id="area-formulario" class="form-card">
+          <div style="display:flex; flex-direction:column; gap:20px;">
+
+            <div class="input-group">
+              <label for="ag-nome">Nome:</label>
+              <input type="text" id="ag-nome" class="input-field" readonly
+                style="background:#f5f5f5; cursor:default; color:var(--cor-texto-suave);">
+            </div>
+
+            <div class="input-group">
+              <label for="ag-telefone">Telefone:</label>
+              <input type="text" id="ag-telefone" class="input-field" readonly
+                style="background:#f5f5f5; cursor:default; color:var(--cor-texto-suave);">
+            </div>
+
+            <!-- SERVIÇO -->
+            <div class="input-group">
+              <label>Serviço:</label>
+              <div class="servico-opcoes">
+                <div class="servico-opcao">
+                  <input type="radio" name="servico" id="srv-corte" value="Corte">
+                  <label for="srv-corte">Corte</label>
+                </div>
+                <div class="servico-opcao">
+                  <input type="radio" name="servico" id="srv-barba" value="Barba">
+                  <label for="srv-barba">Barba</label>
+                </div>
+                <div class="servico-opcao">
+                  <input type="radio" name="servico" id="srv-corte-barba" value="Corte e Barba">
+                  <label for="srv-corte-barba">Corte e Barba</label>
+                </div>
+              </div>
+              <span class="mensagem-erro-campo" id="servico-erro"></span>
+            </div>
+
+            <!-- TIPO DE CORTE (aparece só quando Corte ou Corte e Barba selecionados) -->
+            <div class="input-group" id="bloco-tipo-corte" style="display:none;">
+              <label>Tipo de Corte:</label>
+              <div class="tipo-corte-opcoes">
+                <label class="tipo-corte-opcao">
+                  <input type="radio" name="tipoCorte" value="Maquina" id="tc-maquina">
+                  Máquina — <strong>R$ 20,00</strong>
+                </label>
+                <label class="tipo-corte-opcao">
+                  <input type="radio" name="tipoCorte" value="Tesoura" id="tc-tesoura">
+                  Tesoura — <strong>R$ 35,00</strong>
+                </label>
+                <label class="tipo-corte-opcao">
+                  <input type="radio" name="tipoCorte" value="TesouraMaquina" id="tc-tesoura-maquina">
+                  Tesoura + Máquina — <strong>R$ 60,00</strong>
+                </label>
+              </div>
+              <span class="mensagem-erro-campo" id="tipoCorte-erro"></span>
+            </div>
+
+            <!-- RESUMO DE PREÇO -->
+            <div id="bloco-preco" style="display:none; padding:12px 16px; background:#f9f9f9; border-radius:8px; border:1px solid #e0e0e0;">
+              <div class="preco-info">Total estimado: <span class="preco-destaque" id="preco-valor">—</span><span class="desconto-tag" id="desconto-tag" style="display:none;">10% desconto</span></div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="input-group">
+                <label>Barbeiro:</label>
+                <div class="dropdown-customizado" id="dropdown-barbeiro">
+                  <button type="button" class="dropdown-trigger" id="btn-barbeiro"
+                    onclick="toggleDropdown('barbeiro')">
+                    <span id="barbeiro-texto" class="placeholder">Selecione...</span>
+                    <svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <div class="dropdown-painel hidden" id="painel-barbeiro">
+                    <div class="loading-container" style="padding:10px; width:100%;">
+                      <span class="loading-spinner dark"></span>
+                    </div>
+                  </div>
+                </div>
+                <span class="mensagem-erro-campo" id="barbeiro-erro"></span>
+              </div>
+
+              <div class="input-group">
+                <label for="ag-data">Data:</label>
+                <input type="date" id="ag-data" class="input-field" onchange="aoMudarData()">
+                <span class="mensagem-erro-campo" id="data-erro"></span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label>Horário:</label>
+              <div class="dropdown-customizado" id="dropdown-horario">
+                <button type="button" class="dropdown-trigger" id="btn-horario"
+                  onclick="toggleDropdown('horario')">
+                  <span id="horario-texto" class="placeholder">Selecione o barbeiro e a data primeiro</span>
+                  <svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="dropdown-painel hidden" id="painel-horario"></div>
+              </div>
+              <span class="mensagem-erro-campo" id="horario-erro"></span>
+            </div>
+
+            <div id="alerta-agendar" class="hidden"></div>
+
+            <div style="display:flex; justify-content:center; margin-top:8px;">
+              <button class="btn-primary" id="btn-confirmar" onclick="confirmarReserva()"
+                style="min-width:220px;">
+                Confirmar Reserva
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <div id="area-confirmacao" class="form-card hidden">
+          <div class="confirmacao-reserva">
+            <div class="icone-sucesso">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 12 4 10"/>
+              </svg>
+            </div>
+            <h2 style="font-family:var(--fonte-titulo); font-size:1.4rem; margin-bottom:6px;">
+              Sua reserva foi confirmada com sucesso!
+            </h2>
+            <p style="color:var(--cor-texto-suave); font-size:0.9rem; margin-bottom:20px;">
+              Até lá, estamos te esperando!
+            </p>
+            <div class="confirmacao-resumo">
+              <div class="confirmacao-resumo-item">
+                <span class="label">Barbeiro</span>
+                <span class="valor" id="conf-barbeiro"></span>
+              </div>
+              <div class="confirmacao-resumo-item">
+                <span class="label">Serviço</span>
+                <span class="valor" id="conf-servico"></span>
+              </div>
+              <div class="confirmacao-resumo-item">
+                <span class="label">Data</span>
+                <span class="valor" id="conf-data"></span>
+              </div>
+              <div class="confirmacao-resumo-item">
+                <span class="label">Horário</span>
+                <span class="valor" id="conf-hora"></span>
+              </div>
+              <div class="confirmacao-resumo-item">
+                <span class="label">Total</span>
+                <span class="valor" id="conf-preco"></span>
+              </div>
+            </div>
+            <div class="confirmacao-acoes">
+              <a href="minhasreservas.html" class="btn-primary">Ver Minhas Reservas</a>
+              <button class="btn-secondary" onclick="novoAgendamento()">Agendar outro horário</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    const usuario = protegerRota();
+    renderizarSidebar('agendar');
+
+    let barbeiroSelecionado = null;
+    let horarioSelecionado = null;
+
+    document.getElementById('ag-nome').value = usuario.nome;
+    document.getElementById('ag-telefone').value = usuario.telefone || '';
+
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('ag-data').min = hoje;
+    document.getElementById('ag-data').value = hoje;
+
+    // ---- Preços ----
+    const PRECOS = {
+      corte: { Maquina: 20, Tesoura: 35, TesouraMaquina: 60 },
+      barba: 30
+    };
+
+    function calcularPreco() {
+      const servicoEl = document.querySelector('input[name="servico"]:checked');
+      const tipoEl = document.querySelector('input[name="tipoCorte"]:checked');
+      if (!servicoEl) return null;
+
+      const servico = servicoEl.value;
+      if (servico === 'Barba') return { total: 30, desconto: false };
+      if (servico === 'Corte') {
+        if (!tipoEl) return null;
+        return { total: PRECOS.corte[tipoEl.value], desconto: false };
+      }
+      if (servico === 'Corte e Barba') {
+        if (!tipoEl) return null;
+        const subtotal = PRECOS.corte[tipoEl.value] + PRECOS.barba;
+        const total = subtotal * 0.9;
+        return { total: total, desconto: true };
+      }
+      return null;
+    }
+
+    function atualizarPreco() {
+      const p = calcularPreco();
+      const blocoPreco = document.getElementById('bloco-preco');
+      const precoVal = document.getElementById('preco-valor');
+      const descontoTag = document.getElementById('desconto-tag');
+      if (p) {
+        blocoPreco.style.display = 'block';
+        precoVal.textContent = 'R$ ' + p.total.toFixed(2).replace('.', ',');
+        descontoTag.style.display = p.desconto ? 'inline' : 'none';
+      } else {
+        blocoPreco.style.display = 'none';
+      }
+    }
+
+    // Mostrar/ocultar tipo de corte conforme serviço
+    document.querySelectorAll('input[name="servico"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        const val = this.value;
+        const blocoTipo = document.getElementById('bloco-tipo-corte');
+        if (val === 'Corte' || val === 'Corte e Barba') {
+          blocoTipo.style.display = 'block';
+        } else {
+          blocoTipo.style.display = 'none';
+          document.querySelectorAll('input[name="tipoCorte"]').forEach(function(r){ r.checked = false; });
+        }
+        atualizarPreco();
+      });
+    });
+
+    document.querySelectorAll('input[name="tipoCorte"]').forEach(function(radio) {
+      radio.addEventListener('change', atualizarPreco);
+    });
+
+    // ---- Dropdown helpers ----
+    function toggleDropdown(nome) {
+      const painel = document.getElementById('painel-' + nome);
+      const btn = document.getElementById('btn-' + nome);
+      const aberto = !painel.classList.contains('hidden');
+      painel.classList.toggle('hidden');
+      btn.classList.toggle('aberto', !aberto);
+    }
+
+    document.addEventListener('click', function(e) {
+      ['barbeiro', 'horario'].forEach(function(nome) {
+        const dropdown = document.getElementById('dropdown-' + nome);
+        if (dropdown && !dropdown.contains(e.target)) {
+          document.getElementById('painel-' + nome).classList.add('hidden');
+          document.getElementById('btn-' + nome).classList.remove('aberto');
+        }
+      });
+    });
+
+    // ---- Barbeiros ----
+    async function carregarBarbeiros() {
+      try {
+        const barbeiros = await apiGet('barbeiros');
+        const painel = document.getElementById('painel-barbeiro');
+        painel.innerHTML = '';
+        barbeiros.forEach(function(b) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'pill-opcao ' + (b.disponivel ? 'disponivel' : 'indisponivel');
+          btn.textContent = b.nome;
+          btn.disabled = !b.disponivel;
+          btn.title = b.disponivel ? '' : 'Barbeiro indisponível';
+          if (b.disponivel) {
+            btn.addEventListener('click', function() {
+              selecionarBarbeiro(b);
+              document.getElementById('painel-barbeiro').classList.add('hidden');
+              document.getElementById('btn-barbeiro').classList.remove('aberto');
+            });
+          }
+          painel.appendChild(btn);
+        });
+      } catch (err) {
+        document.getElementById('painel-barbeiro').innerHTML =
+          '<p style="color:var(--cor-erro); font-size:0.85rem; padding:8px;">Erro ao carregar barbeiros.</p>';
+      }
+    }
+
+    function selecionarBarbeiro(barbeiro) {
+      barbeiroSelecionado = barbeiro;
+      horarioSelecionado = null;
+      const texto = document.getElementById('barbeiro-texto');
+      texto.textContent = barbeiro.nome;
+      texto.classList.remove('placeholder');
+      document.getElementById('barbeiro-erro').textContent = '';
+      document.getElementById('horario-texto').textContent = 'Selecione o barbeiro e a data primeiro';
+      document.getElementById('horario-texto').classList.add('placeholder');
+      document.getElementById('painel-horario').innerHTML = '';
+      carregarHorarios();
+    }
+
+    // ---- Horários dinâmicos ----
+    // Gera slots 07:00–18:00 de hora em hora para Seg–Sáb
+    function gerarSlotsBase() {
+      const slots = [];
+      for (let h = 7; h <= 18; h++) {
+        slots.push((h < 10 ? '0' : '') + h + ':00');
+      }
+      return slots;
+    }
+
+    async function carregarHorarios() {
+      if (!barbeiroSelecionado) return;
+      const data = document.getElementById('ag-data').value;
+      if (!data) return;
+
+      // Verificar se é domingo (0) — não funciona aos domingos
+      const dataObj = new Date(data + 'T12:00:00');
+      const diaSemana = dataObj.getDay(); // 0=Dom, 6=Sab
+      if (diaSemana === 0) {
+        const painel = document.getElementById('painel-horario');
+        const textoBtn = document.getElementById('horario-texto');
+        painel.innerHTML = '<p style="color:var(--cor-texto-suave); font-size:0.85rem; padding:8px;">Não trabalhamos aos domingos.</p>';
+        textoBtn.textContent = 'Sem horários nesta data';
+        textoBtn.classList.add('placeholder');
+        return;
+      }
+
+      const painel = document.getElementById('painel-horario');
+      const textoBtn = document.getElementById('horario-texto');
+      painel.innerHTML = '<div class="loading-container" style="padding:10px;"><span class="loading-spinner dark"></span></div>';
+      textoBtn.textContent = 'Carregando...';
+      textoBtn.classList.add('placeholder');
+      horarioSelecionado = null;
+
+      try {
+        // Buscar reservas já confirmadas para este barbeiro nesta data
+        const reservas = await apiGet('reservas?barbeiro_id=' + barbeiroSelecionado.id + '&data=' + data);
+        const horariosOcupados = new Set(
+          reservas.filter(function(r){ return r.status !== 'cancelado'; }).map(function(r){ return r.hora; })
+        );
+
+        const slots = gerarSlotsBase();
+        painel.innerHTML = '';
+
+        // Verificar se é hoje — bloquear horas passadas
+        const agora = new Date();
+        const isHoje = data === agora.toISOString().split('T')[0];
+
+        slots.forEach(function(hora) {
+          const [hh] = hora.split(':').map(Number);
+          let disponivel = !horariosOcupados.has(hora);
+          // Se for hoje, bloquear horas que já passaram
+          if (isHoje && hh <= agora.getHours()) disponivel = false;
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'pill-opcao ' + (disponivel ? 'disponivel' : 'indisponivel');
+          btn.textContent = hora;
+          btn.disabled = !disponivel;
+          btn.title = disponivel ? '' : 'Horário ocupado';
+          if (disponivel) {
+            btn.addEventListener('click', function() {
+              document.querySelectorAll('#painel-horario .pill-opcao').forEach(function(b) {
+                b.classList.remove('selecionado');
+              });
+              btn.classList.add('selecionado');
+              horarioSelecionado = { hora: hora };
+              const diasNomes = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+              const t = document.getElementById('horario-texto');
+              t.textContent = diasNomes[diaSemana] + ' às ' + hora;
+              t.classList.remove('placeholder');
+              document.getElementById('horario-erro').textContent = '';
+              document.getElementById('painel-horario').classList.add('hidden');
+              document.getElementById('btn-horario').classList.remove('aberto');
+            });
+          }
+          painel.appendChild(btn);
+        });
+
+        textoBtn.textContent = 'Selecione...';
+
+      } catch (err) {
+        painel.innerHTML = '<p style="color:var(--cor-erro); font-size:0.85rem; padding:8px;">Erro ao carregar horários.</p>';
+        textoBtn.textContent = 'Erro ao carregar';
+      }
+    }
+
+    function aoMudarData() {
+      if (barbeiroSelecionado) carregarHorarios();
+    }
+
+    // ---- Confirmar reserva ----
+    async function confirmarReserva() {
+      const servicoEl = document.querySelector('input[name="servico"]:checked');
+      const tipoCorteEl = document.querySelector('input[name="tipoCorte"]:checked');
+      let valido = true;
+
+      document.getElementById('servico-erro').textContent = '';
+      document.getElementById('barbeiro-erro').textContent = '';
+      document.getElementById('data-erro').textContent = '';
+      document.getElementById('horario-erro').textContent = '';
+      if (document.getElementById('tipoCorte-erro')) document.getElementById('tipoCorte-erro').textContent = '';
+      document.getElementById('alerta-agendar').innerHTML = '';
+      document.getElementById('alerta-agendar').classList.add('hidden');
+
+      if (!servicoEl) {
+        document.getElementById('servico-erro').textContent = 'Selecione um serviço';
+        valido = false;
+      }
+      const precisaTipo = servicoEl && (servicoEl.value === 'Corte' || servicoEl.value === 'Corte e Barba');
+      if (precisaTipo && !tipoCorteEl) {
+        document.getElementById('tipoCorte-erro').textContent = 'Selecione o tipo de corte';
+        valido = false;
+      }
+      if (!barbeiroSelecionado) {
+        document.getElementById('barbeiro-erro').textContent = 'Selecione um barbeiro';
+        valido = false;
+      }
+      if (!document.getElementById('ag-data').value) {
+        document.getElementById('data-erro').textContent = 'Selecione uma data';
+        valido = false;
+      }
+      if (!horarioSelecionado) {
+        document.getElementById('horario-erro').textContent = 'Selecione um horário';
+        valido = false;
+      }
+      if (!valido) return;
+
+      const btn = document.getElementById('btn-confirmar');
+      mostrarBtnLoading(btn);
+
+      try {
+        const data = document.getElementById('ag-data').value;
+        const diasNomes = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+        const dataObj = new Date(data + 'T12:00:00');
+        const diaSemana = diasNomes[dataObj.getDay()];
+
+        const precoInfo = calcularPreco();
+        const tipoCorteNomes = { Maquina: 'Máquina', Tesoura: 'Tesoura', TesouraMaquina: 'Tesoura + Máquina' };
+
+        const novaReserva = {
+          usuario_id: usuario.id,
+          barbeiro_id: barbeiroSelecionado.id,
+          barbeiro_nome: barbeiroSelecionado.nome,
+          servico: servicoEl.value,
+          tipoCorte: tipoCorteEl ? tipoCorteEl.value : null,
+          preco: precoInfo ? precoInfo.total : null,
+          data: data,
+          diaSemana: diaSemana,
+          hora: horarioSelecionado.hora,
+          status: 'confirmado'
+        };
+
+        await apiPost('reservas', novaReserva);
+
+        const servicoLabel = servicoEl.value + (tipoCorteEl ? ' (' + tipoCorteNomes[tipoCorteEl.value] + ')' : '');
+        document.getElementById('conf-barbeiro').textContent = barbeiroSelecionado.nome;
+        document.getElementById('conf-servico').textContent = servicoLabel;
+        document.getElementById('conf-data').textContent = diaSemana + ', ' + data.split('-').reverse().join('/');
+        document.getElementById('conf-hora').textContent = horarioSelecionado.hora;
+        document.getElementById('conf-preco').textContent = precoInfo
+          ? 'R$ ' + precoInfo.total.toFixed(2).replace('.', ',') + (precoInfo.desconto ? ' (10% desconto aplicado)' : '')
+          : '—';
+
+        document.getElementById('area-formulario').classList.add('hidden');
+        document.getElementById('area-confirmacao').classList.remove('hidden');
+
+      } catch (err) {
+        document.getElementById('alerta-agendar').innerHTML =
+          '<div class="alert alert-error">Erro ao confirmar reserva. Tente novamente.</div>';
+        document.getElementById('alerta-agendar').classList.remove('hidden');
+        esconderBtnLoading(btn);
+      }
+    }
+
+    function novoAgendamento() {
+      barbeiroSelecionado = null;
+      horarioSelecionado = null;
+
+      document.getElementById('area-confirmacao').classList.add('hidden');
+      document.getElementById('area-formulario').classList.remove('hidden');
+
+      const barbTexto = document.getElementById('barbeiro-texto');
+      barbTexto.textContent = 'Selecione...';
+      barbTexto.classList.add('placeholder');
+
+      const horTexto = document.getElementById('horario-texto');
+      horTexto.textContent = 'Selecione o barbeiro e a data primeiro';
+      horTexto.classList.add('placeholder');
+
+      document.querySelectorAll('input[name="servico"]').forEach(function(r){ r.checked = false; });
+      document.querySelectorAll('input[name="tipoCorte"]').forEach(function(r){ r.checked = false; });
+      document.getElementById('bloco-tipo-corte').style.display = 'none';
+      document.getElementById('bloco-preco').style.display = 'none';
+
+      const btn = document.getElementById('btn-confirmar');
+      btn.disabled = false;
+      btn.innerHTML = 'Confirmar Reserva';
+
+      document.getElementById('painel-horario').innerHTML = '';
+
+      carregarBarbeiros();
+    }
+
+    carregarBarbeiros();
+  </script>
+
+</body>
+</html>

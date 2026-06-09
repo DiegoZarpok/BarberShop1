@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BarberShop — Verificação</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-body">
+
+  <div class="auth-container">
+
+    <div class="auth-logo-texto">✂ BarberShop</div>
+
+    <div id="step-1" class="verificacao-step">
+      <h1 class="auth-titulo" style="font-size:1.3rem; margin-bottom:8px;">Recuperar Senha</h1>
+      <p style="text-align:center; font-size:0.875rem; color:var(--cor-texto-suave); margin-bottom:24px;">
+        Informe seu email para receber o código de verificação
+      </p>
+
+      <div id="alerta-step1" class="auth-alert hidden"></div>
+
+      <form class="auth-form" id="form-step1" novalidate>
+        <div class="input-group">
+          <label for="email-recuperar">Email</label>
+          <input type="email" id="email-recuperar" class="input-field" placeholder="seu@email.com">
+          <span class="mensagem-erro-campo" id="email-recuperar-erro"></span>
+        </div>
+        <div class="auth-acoes">
+          <button type="submit" class="btn-primary" id="btn-enviar-codigo" style="max-width:100%;">Enviar Código</button>
+        </div>
+      </form>
+
+      <p class="auth-rodape" style="margin-top:16px;">
+        <a href="index.html">← Voltar ao Login</a>
+      </p>
+    </div>
+
+    <div id="step-2" class="verificacao-step hidden">
+      <h1 class="auth-titulo" style="font-size:1.3rem; margin-bottom:8px;">Insira o Código</h1>
+
+      <p class="verificacao-email-mascarado" id="texto-email-mascarado"></p>
+
+      <div id="alerta-step2" class="auth-alert hidden"></div>
+
+      <form class="auth-form" id="form-step2" novalidate>
+        <div class="otp-container" id="otp-inputs"></div>
+        <span class="mensagem-erro-campo" id="otp-erro" style="text-align:center;"></span>
+
+        <p class="contador-otp">
+          Código válido por <span id="contador-tempo">5:00</span>
+        </p>
+        <button type="button" class="reenviar-link" id="btn-reenviar" disabled>
+          Reenviar código
+        </button>
+
+        <div class="auth-acoes">
+          <button type="submit" class="btn-primary" id="btn-verificar" style="max-width:100%;">Verificar Código</button>
+        </div>
+      </form>
+
+      <p class="auth-rodape" style="margin-top:16px;">
+        <span class="link" onclick="voltarStep1()">← Voltar</span>
+      </p>
+    </div>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let intervaloContador = null;
+    let tempoRestante = 300;
+    let codigoGerado = '';
+    let emailAtual = '';
+    let idCodigoSalvo = null;
+
+    function criarOtpInputs() {
+      const container = document.getElementById('otp-inputs');
+      container.innerHTML = '';
+      for (let i = 0; i < 6; i++) {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.maxLength = 1;
+        inp.className = 'otp-input';
+        inp.id = 'otp-' + i;
+        inp.inputMode = 'numeric';
+        inp.pattern = '[0-9]';
+        inp.addEventListener('input', function() {
+          this.value = this.value.replace(/\D/g, '');
+          if (this.value && i < 5) document.getElementById('otp-' + (i + 1)).focus();
+        });
+        inp.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !this.value && i > 0) {
+            document.getElementById('otp-' + (i - 1)).focus();
+          }
+        });
+        container.appendChild(inp);
+      }
+    }
+
+    function obterCodigoDigitado() {
+      return Array.from({ length: 6 }, (_, i) => document.getElementById('otp-' + i).value).join('');
+    }
+
+    function iniciarContador() {
+      tempoRestante = 300;
+      clearInterval(intervaloContador);
+      document.getElementById('btn-reenviar').disabled = true;
+
+      intervaloContador = setInterval(function() {
+        tempoRestante--;
+        const min = Math.floor(tempoRestante / 60);
+        const seg = tempoRestante % 60;
+        document.getElementById('contador-tempo').textContent = `${min}:${seg.toString().padStart(2,'0')}`;
+
+        if (tempoRestante <= 60) {
+          document.getElementById('btn-reenviar').disabled = false;
+        }
+        if (tempoRestante <= 0) {
+          clearInterval(intervaloContador);
+          document.getElementById('contador-tempo').textContent = '0:00';
+        }
+      }, 1000);
+    }
+
+    function voltarStep1() {
+      document.getElementById('step-2').classList.add('hidden');
+      document.getElementById('step-1').classList.remove('hidden');
+      clearInterval(intervaloContador);
+    }
+
+    criarOtpInputs();
+
+    document.getElementById('form-step1').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('email-recuperar').value.trim();
+      limparErro('email-recuperar');
+      limparAlerta('alerta-step1');
+
+      if (!email) { marcarErro('email-recuperar', 'Campo obrigatório'); return; }
+      if (!validarEmail(email)) { marcarErro('email-recuperar', 'Email inválido'); return; }
+
+      const btn = document.getElementById('btn-enviar-codigo');
+      mostrarBtnLoading(btn);
+
+      try {
+        const usuarios = await apiGet(`usuarios?email=${encodeURIComponent(email)}`);
+        if (usuarios.length === 0) {
+          mostrarAlerta('alerta-step1', 'Email não encontrado em nossa base.', 'error');
+          esconderBtnLoading(btn);
+          return;
+        }
+
+        codigoGerado = gerarCodigo6Digitos();
+        emailAtual = email;
+        sessionStorage.setItem('recuperar_email', email);
+
+        const registro = await apiPost('codigos_verificacao', {
+          email,
+          codigo: codigoGerado,
+          criadoEm: Date.now()
+        });
+        idCodigoSalvo = registro.id;
+
+        document.getElementById('texto-email-mascarado').innerHTML =
+          `Código enviado para <strong>${mascararEmail(email)}</strong>`;
+
+        document.getElementById('step-1').classList.add('hidden');
+        document.getElementById('step-2').classList.remove('hidden');
+        criarOtpInputs();
+        iniciarContador();
+        document.getElementById('otp-0').focus();
+        esconderBtnLoading(btn);
+
+      } catch (err) {
+        mostrarAlerta('alerta-step1', 'Erro ao enviar código. Tente novamente.', 'error');
+        esconderBtnLoading(btn);
+      }
+    });
+
+    document.getElementById('btn-reenviar').addEventListener('click', async function() {
+      this.disabled = true;
+      codigoGerado = gerarCodigo6Digitos();
+      try {
+        if (idCodigoSalvo) await apiDelete(`codigos_verificacao/${idCodigoSalvo}`);
+        const registro = await apiPost('codigos_verificacao', {
+          email: emailAtual,
+          codigo: codigoGerado,
+          criadoEm: Date.now()
+        });
+        idCodigoSalvo = registro.id;
+        iniciarContador();
+        criarOtpInputs();
+        document.getElementById('otp-0').focus();
+        limparAlerta('alerta-step2');
+      } catch (err) {
+        mostrarAlerta('alerta-step2', 'Erro ao reenviar. Tente novamente.', 'error');
+      }
+    });
+
+    document.getElementById('form-step2').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const digitado = obterCodigoDigitado();
+      document.getElementById('otp-erro').textContent = '';
+
+      if (digitado.length < 6) {
+        document.getElementById('otp-erro').textContent = 'Digite os 6 dígitos do código';
+        return;
+      }
+
+      const btn = document.getElementById('btn-verificar');
+      mostrarBtnLoading(btn);
+
+      try {
+        const registros = await apiGet(`codigos_verificacao?email=${encodeURIComponent(emailAtual)}`);
+        const registro = registros.find(r => r.codigo === digitado);
+
+        if (!registro) {
+          document.getElementById('otp-erro').textContent = 'Código incorreto. Verifique e tente novamente.';
+          Array.from({ length: 6 }, (_, i) => {
+            const inp = document.getElementById('otp-' + i);
+            if (inp) inp.classList.add('erro');
+          });
+          esconderBtnLoading(btn);
+          return;
+        }
+
+        if (Date.now() - registro.criadoEm > 300000) {
+          document.getElementById('otp-erro').textContent = 'Código expirado. Solicite um novo.';
+          esconderBtnLoading(btn);
+          return;
+        }
+
+        clearInterval(intervaloContador);
+        sessionStorage.setItem('codigo_id', registro.id);
+        window.location.href = 'alterarsenha.html';
+
+      } catch (err) {
+        mostrarAlerta('alerta-step2', 'Erro na verificação. Tente novamente.', 'error');
+        esconderBtnLoading(btn);
+      }
+    });
+  </script>
+
+</body>
+</html>

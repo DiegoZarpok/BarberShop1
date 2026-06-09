@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BarberShop — Perfil</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/app.css">
+  <style>
+    .avatar-upload-wrapper {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+    }
+    .avatar-upload-wrapper:hover .avatar-overlay { opacity: 1; }
+    .avatar-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      color: #fff;
+      font-size: 0.75rem;
+      text-align: center;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .perfil-avatar-img {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #e0e0e0;
+    }
+    #input-foto { display: none; }
+    .foto-dica { font-size: 0.78rem; color: var(--cor-texto-suave); margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-titulo">Perfil</h1>
+        <p class="page-subtitulo">Gerencie suas informações pessoais</p>
+      </div>
+      <div class="page-body">
+        <div id="perfil-conteudo">
+          <div class="loading-container">
+            <span class="loading-spinner dark"></span> Carregando perfil...
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    const usuario = protegerRota();
+    renderizarSidebar('perfil');
+
+    async function carregarPerfil() {
+      try {
+        const [dados, reservas] = await Promise.all([
+          apiGet('usuarios/' + usuario.id),
+          apiGet('reservas?usuario_id=' + usuario.id)
+        ]);
+
+        const inicial = dados.nome.charAt(0).toUpperCase();
+        const cortes = dados.cortesRealizados || 0;
+        const barbas = dados.barbasFeitas || 0;
+        const planoLabel = dados.plano === 'premium' ? 'Premium' : 'Plano Grátis';
+
+        // Avatar: foto salva ou inicial
+        const fotoSalva = dados.foto || localStorage.getItem('perfil_foto_' + dados.id);
+        const avatarHtml = fotoSalva
+          ? `<img src="${fotoSalva}" class="perfil-avatar-img" id="avatar-preview" alt="Foto de perfil">`
+          : `<div class="perfil-avatar" id="avatar-preview">${inicial}</div>`;
+
+        const incluidos = [
+          'Agendamento de horários',
+          'Visualização das reservas',
+          'Notificação de agendamento',
+          'Escolha de barbeiro',
+          'Histórico de atendimentos'
+        ];
+
+        const bloqueados = [
+          'Agendamento prioritário',
+          'Desconto em combos',
+          'Horário exclusivo',
+          'Lembretes automáticos'
+        ];
+
+        const svgCheck = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 12 4 10"/></svg>';
+        const svgX = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+        document.getElementById('perfil-conteudo').innerHTML = `
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-titulo">Painel do Cliente</div>
+            <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+              <div style="text-align:center;">
+                <div class="avatar-upload-wrapper" onclick="document.getElementById('input-foto').click()" title="Clique para alterar foto">
+                  ${avatarHtml}
+                  <div class="avatar-overlay">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    Alterar foto
+                  </div>
+                </div>
+                <input type="file" id="input-foto" accept="image/*">
+                <div class="foto-dica">Clique para alterar</div>
+              </div>
+              <div class="perfil-info">
+                <h2>${dados.nome}</h2>
+                <div class="perfil-plano">${planoLabel}</div>
+                <div class="perfil-membro">Membro desde ${dados.membroDesde}</div>
+                <div class="perfil-contato">
+                  <span class="perfil-contato-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    ${dados.email}
+                  </span>
+                  <span class="perfil-contato-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.55 3.62 2 2 0 0 1 3.53 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.37-1.37a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    ${dados.telefone}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="perfil-cards-grid">
+            <div class="card">
+              <div class="card-titulo">Atividade na Barbearia</div>
+              <div class="atividade-item">
+                ${svgCheck}
+                Cortes realizados: <strong>${cortes}</strong>
+              </div>
+              <div class="atividade-item">
+                ${svgCheck}
+                Barbas feitas: <strong>${barbas}</strong>
+              </div>
+              <div class="atividade-item">
+                ${svgCheck}
+                Total de reservas: <strong>${reservas.length}</strong>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-titulo">Status do Cliente</div>
+              <div class="status-plano-titulo">${planoLabel}</div>
+              <div class="status-colunas">
+                <div>${incluidos.map(f => '<div class="status-item incluido">' + svgCheck + f + '</div>').join('')}</div>
+                <div>${bloqueados.map(f => '<div class="status-item bloqueado">' + svgX + f + '</div>').join('')}</div>
+              </div>
+              <button class="btn-primary" style="width:100%; margin-top:8px; background:var(--cor-premium); font-size:0.85rem; padding:10px;">
+                ⭐ Fazer Upgrade para Premium
+              </button>
+            </div>
+          </div>
+        `;
+
+        // Listener para upload de foto
+        document.getElementById('input-foto').addEventListener('change', async function(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = async function(ev) {
+            const base64 = ev.target.result;
+            // Salvar no localStorage e tentar salvar no servidor
+            localStorage.setItem('perfil_foto_' + dados.id, base64);
+            try {
+              await apiPatch('usuarios/' + dados.id, { foto: base64 });
+            } catch(err) { /* silencioso */ }
+
+            // Atualizar avatar visualmente
+            const wrapper = document.querySelector('.avatar-upload-wrapper');
+            const overlay = wrapper.querySelector('.avatar-overlay');
+            const oldAvatar = document.getElementById('avatar-preview');
+            const novaImg = document.createElement('img');
+            novaImg.src = base64;
+            novaImg.className = 'perfil-avatar-img';
+            novaImg.id = 'avatar-preview';
+            novaImg.alt = 'Foto de perfil';
+            oldAvatar.replaceWith(novaImg);
+          };
+          reader.readAsDataURL(file);
+        });
+
+      } catch (err) {
+        document.getElementById('perfil-conteudo').innerHTML =
+          '<div class="alert alert-error">Erro ao carregar perfil. Tente novamente.</div>';
+      }
+    }
+
+    carregarPerfil();
+  </script>
+
+</body>
+</html>
