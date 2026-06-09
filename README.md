@@ -66,7 +66,7 @@ Não precisa instalar nada. Basta:
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/DiegoZarpok/barbershop.git
+git clone https://github.com/DiegoZarpok/BarberShop1.git
 
 # Entrar na pasta
 cd barbershop
