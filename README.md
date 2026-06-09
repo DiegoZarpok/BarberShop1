@@ -13,7 +13,7 @@
 
 ## 🔗 Links
 
-- **Deploy:** [https://diegozarpok.github.io/barbershop/](https://diegozarpok.github.io/barbershop/)
+- **Deploy:** [https://diegozarpok.github.io/BarberShop1/](https://diegozarpok.github.io/BarberShop1/)
 - **Repositório:** [https://github.com/DiegoZarpok/barbershop](https://github.com/DiegoZarpok/barbershop)
 
 ---
