@@ -131,7 +131,7 @@ O arquivo `js/api.js` simula uma API REST completa usando o `localStorage` do na
 
 ## 👥 Integrantes do Grupo
 
-- (adicionar nomes aqui)
+- Diego Barbosa, Pedro Costa, Alexandre Muniz.
 
 ---
 
